@@ -7,7 +7,7 @@ apt-get install -y --no-install-recommends \
   ca-certificates curl docker.io docker-compose
 systemctl enable --now docker
 
-install -d -m 0755 /opt/channelflow-pin
+install -d -m 0755 /home/binarygeek119/Projects/channelflow-pin
 install -d -m 0700 /var/lib/channelflow-pin/certs
 
 # Token and subdomain from instance metadata (set by gcp-setup.sh).
@@ -17,7 +17,7 @@ sub="$(curl -sf "${hdr[@]}" "${META}/duckdns-subdomain" || true)"
 token="$(curl -sf "${hdr[@]}" "${META}/duckdns-token" || true)"
 if [[ -n "${sub}" && -n "${token}" ]]; then
   umask 077
-  cat >/opt/channelflow-pin/.env <<EOF
+  cat >/home/binarygeek119/Projects/channelflow-pin/.env <<EOF
 DUCKDNS_SUBDOMAIN=${sub}
 DUCKDNS_TOKEN=${token}
 CERT_DIR=/var/lib/channelflow-pin/certs
@@ -30,7 +30,7 @@ EOF
 fi
 
 # If gcp-setup.sh already copied the app, start it.
-if [[ -f /opt/channelflow-pin/docker-compose.yml ]]; then
-  cd /opt/channelflow-pin
+if [[ -f /home/binarygeek119/Projects/channelflow-pin/docker-compose.yml ]]; then
+  cd /home/binarygeek119/Projects/channelflow-pin
   docker-compose up -d --build || true
 fi
