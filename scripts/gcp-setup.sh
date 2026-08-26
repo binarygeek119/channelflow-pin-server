@@ -4,6 +4,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=paths.sh
+source "${ROOT}/scripts/paths.sh"
 ZONE="${GCP_ZONE:-us-central1-a}"
 VM_NAME="${GCP_VM_NAME:-channelflow-pin}"
 PROJECT_DEFAULT="${GCP_PROJECT:-channelflow-pin}"
@@ -63,6 +65,7 @@ echo
 echo "Project:   ${GCP_PROJECT}"
 echo "Zone:      ${ZONE}"
 echo "VM:        ${VM_NAME}"
+echo "App dir:   ${APP_DIR}"
 echo "Hostname:  ${DUCKDNS_SUBDOMAIN}.duckdns.org"
 echo
 
@@ -155,17 +158,21 @@ for i in $(seq 1 36); do
   sleep 5
 done
 
-echo "Copying pin server to the VM…"
-gcloud compute ssh "${VM_NAME}" --project="${GCP_PROJECT}" --zone="${ZONE}" \
-  --command="sudo mkdir -p /opt/channelflow-pin /var/lib/channelflow-pin/certs && sudo chmod 777 /opt/channelflow-pin"
+echo "Preparing ${APP_DIR} on the VM…"
+gcloud compute ssh "${VM_NAME}" --project="${GCP_PROJECT}" --zone="${ZONE}" --command="
+  sudo useradd -m -s /bin/bash ${APP_USER} 2>/dev/null || true
+  sudo mkdir -p ${APP_DIR} ${CERT_DIR}
+  sudo chown -R \$(whoami):\$(whoami) /home/${APP_USER}/Projects
+"
+echo "Copying pin server to ${APP_DIR}…"
 gcloud compute scp --project="${GCP_PROJECT}" --zone="${ZONE}" --recurse \
   "${ROOT}/cmd" "${ROOT}/internal" "${ROOT}/web" \
   "${ROOT}/go.mod" "${ROOT}/Dockerfile" "${ROOT}/docker-compose.yml" \
   "${ROOT}/.dockerignore" \
-  "${VM_NAME}:/opt/channelflow-pin/"
+  "${VM_NAME}:${APP_DIR}/"
 if [[ -f "${ROOT}/go.sum" ]]; then
   gcloud compute scp --project="${GCP_PROJECT}" --zone="${ZONE}" \
-    "${ROOT}/go.sum" "${VM_NAME}:/opt/channelflow-pin/"
+    "${ROOT}/go.sum" "${VM_NAME}:${APP_DIR}/"
 fi
 
 REMOTE_ENV="$(mktemp)"
@@ -173,16 +180,17 @@ umask 077
 cat >"${REMOTE_ENV}" <<ENVFILE
 DUCKDNS_SUBDOMAIN=${DUCKDNS_SUBDOMAIN}
 DUCKDNS_TOKEN=${DUCKDNS_TOKEN}
-CERT_DIR=/var/lib/channelflow-pin/certs
+CERT_DIR=/certs
 ENVFILE
 gcloud compute scp --project="${GCP_PROJECT}" --zone="${ZONE}" \
-  "${REMOTE_ENV}" "${VM_NAME}:/opt/channelflow-pin/.env"
+  "${REMOTE_ENV}" "${VM_NAME}:${APP_DIR}/.env"
 rm -f "${REMOTE_ENV}"
 
 echo "Building and starting the pin server…"
 gcloud compute ssh "${VM_NAME}" --project="${GCP_PROJECT}" --zone="${ZONE}" --command="
-  sudo chmod 600 /opt/channelflow-pin/.env
-  cd /opt/channelflow-pin
+  sudo chown -R ${APP_USER}:${APP_USER} /home/${APP_USER}/Projects
+  sudo chmod 600 ${APP_DIR}/.env
+  cd ${APP_DIR}
   sudo docker-compose up -d --build
 "
 
