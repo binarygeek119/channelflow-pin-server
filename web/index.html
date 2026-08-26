@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ChannelFlow Pin Server</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="2" y="6" width="28" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+        <circle cx="10" cy="16" r="3" fill="currentColor"/>
+        <path d="M16 13h10M16 16h8M16 19h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <strong>ChannelFlow</strong>
+        <span>Pin server</span>
+      </div>
+    </div>
+    <p class="lede">Apps wait here for a quick PIN. Type that PIN on ChannelFlow-Server to send encrypted M3U and XMLTV links. This page stands in for both sides until the client ships.</p>
+  </header>
+
+  <main class="grid">
+    <section class="card" id="app-pane">
+      <h1>App</h1>
+      <p class="hint">Connects like the ChannelFlow client. Shows the PIN the user must type on the server.</p>
+      <div class="pin-board" id="app-pin" aria-live="polite">
+        <span class="muted">Not connected</span>
+      </div>
+      <p class="meta" id="app-meta">Idle</p>
+      <div class="actions">
+        <button type="button" id="app-connect">Get a quick PIN</button>
+        <button type="button" class="ghost" id="app-drop" disabled>Disconnect</button>
+      </div>
+      <div class="result" id="app-result" hidden></div>
+    </section>
+
+    <section class="card" id="server-pane">
+      <h1>Quick Pin</h1>
+      <p class="hint">Same job as the ChannelFlow-Server tab: encrypt the two URLs with the PIN and deliver them.</p>
+      <label>Quick PIN
+        <input id="srv-pin" inputmode="text" autocomplete="off" spellcheck="false" maxlength="9" placeholder="XXXX-XXXX" />
+      </label>
+      <label>M3U URL
+        <input id="srv-m3u" type="url" placeholder="https://your-server/iptv/channels.m3u" />
+      </label>
+      <label>XMLTV URL
+        <input id="srv-xmltv" type="url" placeholder="https://your-server/iptv/epg.xml" />
+      </label>
+      <div class="actions">
+        <button type="button" id="srv-send">Encrypt and send</button>
+      </div>
+      <p class="meta" id="srv-meta"></p>
+    </section>
+  </main>
+
+  <footer>
+    <span id="waiting">Waiting apps: —</span>
+    <span>Pins last 10 minutes. The pin server never sees the URLs.</span>
+  </footer>
+  <script src="/app.js"></script>
+</body>
+</html>

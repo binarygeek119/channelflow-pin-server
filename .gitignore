@@ -1,0 +1,6 @@
+.env
+/certs
+/bin
+/pinserver
+*.exe
+.DS_Store
