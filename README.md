@@ -56,7 +56,7 @@ chmod +x scripts/gcp-setup.sh
 ./scripts/gcp-setup.sh
 ```
 
-The script creates a GCP project, an e2-micro VM, firewall rules for 80/443, stores the DuckDNS token on the VM, points `channelflow.duckdns.org` at the VM, and starts the pin server from `/home/binarygeek119/Projects/channelflow-pin`. ChannelFlow-Server and the app should use:
+The script creates a GCP project, an e2-micro VM, firewall rules for 80/443, stores the DuckDNS token on the VM, points `channelflow.duckdns.org` at the VM, and starts the pin server. ChannelFlow-Server and the app should use:
 
 `https://channelflow.duckdns.org`
 

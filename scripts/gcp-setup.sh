@@ -155,17 +155,17 @@ for i in $(seq 1 36); do
   sleep 5
 done
 
-echo "Copying pin server to /home/binarygeek119/Projects/channelflow-pin…"
+echo "Copying pin server to the VM…"
 gcloud compute ssh "${VM_NAME}" --project="${GCP_PROJECT}" --zone="${ZONE}" \
-  --command="sudo mkdir -p /home/binarygeek119/Projects/channelflow-pin /var/lib/channelflow-pin/certs && sudo chmod -R 777 /home/binarygeek119/Projects"
+  --command="sudo mkdir -p /opt/channelflow-pin /var/lib/channelflow-pin/certs && sudo chmod 777 /opt/channelflow-pin"
 gcloud compute scp --project="${GCP_PROJECT}" --zone="${ZONE}" --recurse \
   "${ROOT}/cmd" "${ROOT}/internal" "${ROOT}/web" \
   "${ROOT}/go.mod" "${ROOT}/Dockerfile" "${ROOT}/docker-compose.yml" \
   "${ROOT}/.dockerignore" \
-  "${VM_NAME}:/home/binarygeek119/Projects/channelflow-pin/"
+  "${VM_NAME}:/opt/channelflow-pin/"
 if [[ -f "${ROOT}/go.sum" ]]; then
   gcloud compute scp --project="${GCP_PROJECT}" --zone="${ZONE}" \
-    "${ROOT}/go.sum" "${VM_NAME}:/home/binarygeek119/Projects/channelflow-pin/"
+    "${ROOT}/go.sum" "${VM_NAME}:/opt/channelflow-pin/"
 fi
 
 REMOTE_ENV="$(mktemp)"
@@ -176,13 +176,13 @@ DUCKDNS_TOKEN=${DUCKDNS_TOKEN}
 CERT_DIR=/var/lib/channelflow-pin/certs
 ENVFILE
 gcloud compute scp --project="${GCP_PROJECT}" --zone="${ZONE}" \
-  "${REMOTE_ENV}" "${VM_NAME}:/home/binarygeek119/Projects/channelflow-pin/.env"
+  "${REMOTE_ENV}" "${VM_NAME}:/opt/channelflow-pin/.env"
 rm -f "${REMOTE_ENV}"
 
 echo "Building and starting the pin server…"
 gcloud compute ssh "${VM_NAME}" --project="${GCP_PROJECT}" --zone="${ZONE}" --command="
-  sudo chmod 600 /home/binarygeek119/Projects/channelflow-pin/.env
-  cd /home/binarygeek119/Projects/channelflow-pin
+  sudo chmod 600 /opt/channelflow-pin/.env
+  cd /opt/channelflow-pin
   sudo docker-compose up -d --build
 "
 
