@@ -29,16 +29,14 @@ body {
 }
 .brand {
   display: flex;
-  align-items: flex-end;
-  gap: 0.75rem;
+  align-items: center;
   margin-bottom: 0.75rem;
 }
 .logo {
   display: block;
-  height: 52px;
+  height: 112px;
   width: auto;
 }
-.brand span { color: var(--muted); font-size: 0.85rem; padding-bottom: 0.2rem; }
 .lede { color: var(--muted); max-width: 46rem; margin: 0; }
 
 .grid {
