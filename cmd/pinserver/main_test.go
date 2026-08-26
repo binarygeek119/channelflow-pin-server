@@ -97,3 +97,35 @@ func TestBrandAssets(t *testing.T) {
 		}
 	}
 }
+
+func TestHTTPAPIIsNotRedirected(t *testing.T) {
+	inner := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
+	h := serveHTTPAPIOrRedirect(inner)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/pins/ABCD1234/deliver", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("deliver via HTTP: %d", rec.Code)
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/v1/wait", nil)
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("wait via HTTP: %d", rec.Code)
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Host = "channelflow.duckdns.org"
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusMovedPermanently {
+		t.Fatalf("ui redirect: %d", rec.Code)
+	}
+	if loc := rec.Header().Get("Location"); loc != "https://channelflow.duckdns.org/" {
+		t.Fatalf("location %q", loc)
+	}
+}

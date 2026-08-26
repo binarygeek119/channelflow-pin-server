@@ -94,7 +94,7 @@ func run() error {
 		GetCertificate: m.GetCertificate,
 		MinVersion:     tls.VersionTLS12,
 	}
-	httpSrv := newHTTPServer(":80", m.HTTPHandler(http.HandlerFunc(redirectHTTPS)))
+	httpSrv := newHTTPServer(":80", m.HTTPHandler(serveHTTPAPIOrRedirect(h)))
 
 	errCh := make(chan error, 2)
 	go func() { errCh <- httpSrv.ListenAndServe() }()
@@ -158,6 +158,18 @@ func duckLoop(sub, token string) {
 func redirectHTTPS(w http.ResponseWriter, r *http.Request) {
 	host := r.Host
 	http.Redirect(w, r, "https://"+host+r.URL.RequestURI(), http.StatusMovedPermanently)
+}
+
+// serveHTTPAPIOrRedirect keeps /health and /v1 on HTTP so POST and WebSocket
+// are not turned into GET by a 301. The tester UI still moves to HTTPS.
+func serveHTTPAPIOrRedirect(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/health" || strings.HasPrefix(r.URL.Path, "/v1/") {
+			next.ServeHTTP(w, r)
+			return
+		}
+		redirectHTTPS(w, r)
+	})
 }
 
 func (s *server) handleHealth(w http.ResponseWriter, r *http.Request) {
