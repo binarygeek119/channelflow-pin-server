@@ -6,10 +6,13 @@ services:
     env_file:
       - .env
     environment:
-      CERT_DIR: /certs
+      CERT_DIR: /var/lib/channelflow-pin/certs
     ports:
       - "80:80"
       - "443:443"
       - "43123:43123"
     volumes:
-      - ./certs:/certs
+      - pin-certs:/var/lib/channelflow-pin/certs
+
+volumes:
+  pin-certs:

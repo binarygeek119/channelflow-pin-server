@@ -78,7 +78,7 @@ func run() error {
 
 	certDir := os.Getenv("CERT_DIR")
 	if certDir == "" {
-		certDir = "/home/binarygeek119/Projects/channelflow-pin/certs"
+		certDir = "/var/lib/channelflow-pin/certs"
 	}
 	if err := os.MkdirAll(certDir, 0o700); err != nil {
 		return err
