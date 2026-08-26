@@ -6,19 +6,6 @@ Small always-on pin server for a Google Cloud VM. ChannelFlow apps connect and r
 
 Protocol for the C# Quick Pin tab and the WIP client: [PROTOCOL.md](PROTOCOL.md).
 
-## Host source location
-
-On the host (not the Google Cloud VM), put this repo at:
-
-`/home/binarygeek119/Projects/channelflow-pin`
-
-```bash
-chmod +x scripts/install-host.sh
-./scripts/install-host.sh
-```
-
-That copies the source to that path. The GCP VM still runs the app from `/opt/channelflow-pin`.
-
 ## Local preview
 
 Needs Go 1.22+.
