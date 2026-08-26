@@ -30,6 +30,14 @@ cp .env.example .env
 docker compose up --build
 ```
 
+GitHub Actions publishes `linux/amd64` images to GHCR on every push to `main`:
+
+```bash
+docker pull ghcr.io/binarygeek119/channelflow-pin-server:latest
+```
+
+Tags: `latest` (main), `main`, `sha-<commit>`, and `v*` release tags.
+
 ## Production (DuckDNS + TLS)
 
 On the VM, with ports **80** and **443** open:

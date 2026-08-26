@@ -70,3 +70,30 @@ func TestHealthAndDeliver(t *testing.T) {
 		t.Fatalf("unknown %d", res.StatusCode)
 	}
 }
+
+func TestBrandAssets(t *testing.T) {
+	h := pins.NewHub()
+	srv := httptest.NewServer(testMux(h))
+	defer srv.Close()
+
+	for _, path := range []string{
+		"/favicon.ico",
+		"/favicon-16x16.png",
+		"/favicon-32x32.png",
+		"/apple-touch-icon.png",
+		"/android-chrome-192x192.png",
+		"/android-chrome-512x512.png",
+		"/logo.png",
+		"/logo-plane.png",
+		"/site.webmanifest",
+	} {
+		res, err := http.Get(srv.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		if res.StatusCode != 200 {
+			t.Errorf("%s: %d", path, res.StatusCode)
+		}
+	}
+}

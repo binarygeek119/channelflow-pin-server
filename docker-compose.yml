@@ -1,5 +1,6 @@
 services:
   pinserver:
+    image: ghcr.io/binarygeek119/channelflow-pin-server:${IMAGE_TAG:-latest}
     build: .
     container_name: channelflow-pin
     restart: unless-stopped

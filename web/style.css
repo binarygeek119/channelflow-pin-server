@@ -29,13 +29,16 @@ body {
 }
 .brand {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 0.75rem;
   margin-bottom: 0.75rem;
 }
-.brand strong { display: block; font-size: 1.15rem; letter-spacing: 0.02em; }
-.brand span { color: var(--muted); font-size: 0.85rem; }
-.mark { width: 32px; height: 32px; color: var(--red); }
+.logo {
+  display: block;
+  height: 52px;
+  width: auto;
+}
+.brand span { color: var(--muted); font-size: 0.85rem; padding-bottom: 0.2rem; }
 .lede { color: var(--muted); max-width: 46rem; margin: 0; }
 
 .grid {
