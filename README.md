@@ -2,7 +2,7 @@
 
 Repo: [github.com/binarygeek119/channelflow-pin-server](https://github.com/binarygeek119/channelflow-pin-server)
 
-Small always-on pin server for a Google Cloud VM. ChannelFlow apps connect and receive a random **8-character quick PIN**. The user types that PIN on ChannelFlow-Server’s **Quick Pin** tab. The server encrypts its M3U and XMLTV URLs with the PIN as the seed; this process forwards the ciphertext to the waiting app and never opens it.
+Small always-on pin server for a Google Cloud VM. ChannelFlow apps connect and receive a random **8-character quick PIN**. The user types that PIN on ChannelFlow-Server’s **Quick Pin** tab. The server encrypts its public and local M3U/XMLTV URLs with the PIN as the seed; this process forwards the ciphertext to the waiting app and never opens it.
 
 [ChannelFlow-Server](https://github.com/binarygeek119/ChannelFlow) stays on your home machine. Live TV does not go through this VM.
 
@@ -19,7 +19,7 @@ RELAY_DEV=1 PORT=43123 go run ./cmd/pinserver
 Open http://127.0.0.1:43123
 
 - **App** — get a PIN (stands in for the ChannelFlow client)
-- **Quick Pin** — paste your M3U and XMLTV URLs, type the PIN, send (stands in for ChannelFlow-Server)
+- **Quick Pin** — paste public and local M3U/XMLTV URLs, type the PIN, send (stands in for ChannelFlow-Server)
 
 Docker:
 

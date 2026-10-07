@@ -22,7 +22,15 @@ func TestNormalizeAndDisplay(t *testing.T) {
 }
 
 func TestRoundTrip(t *testing.T) {
-	ct, err := EncryptLinks("K7M2Q9AB", "https://home.example/channels.m3u", "https://home.example/epg.xml")
+	in := Links{
+		M3U:         "http://192.168.1.10/iptv/channels.m3u",
+		XMLTV:       "http://192.168.1.10/iptv/epg.xml",
+		M3UPublic:   "https://home.example/iptv/channels.m3u",
+		XMLTVPublic: "https://home.example/iptv/epg.xml",
+		M3ULocal:    "http://192.168.1.10/iptv/channels.m3u",
+		XMLTVLocal:  "http://192.168.1.10/iptv/epg.xml",
+	}
+	ct, err := EncryptLinks("K7M2Q9AB", in)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,11 +41,31 @@ func TestRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if links.M3U != "https://home.example/channels.m3u" || links.XMLTV != "https://home.example/epg.xml" {
+	if links != in {
 		t.Fatalf("%+v", links)
 	}
 	if _, err := DecryptLinks("ZZZZZZZZ", ct); err != ErrDecrypt {
 		t.Fatalf("wrong pin: %v", err)
+	}
+}
+
+func TestLegacyTwoFieldDecrypt(t *testing.T) {
+	ct, err := EncryptLinks("K7M2Q9AB", Links{
+		M3U:   "https://home.example/channels.m3u",
+		XMLTV: "https://home.example/epg.xml",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	links, err := DecryptLinks("K7M2Q9AB", ct)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if links.M3U != "https://home.example/channels.m3u" || links.XMLTV != "https://home.example/epg.xml" {
+		t.Fatalf("primary: %+v", links)
+	}
+	if links.M3UPublic != "" || links.XMLTVPublic != "" || links.M3ULocal != "" || links.XMLTVLocal != "" {
+		t.Fatalf("variants should be empty: %+v", links)
 	}
 }
 

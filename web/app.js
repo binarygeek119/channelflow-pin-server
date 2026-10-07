@@ -25,6 +25,55 @@ function b64decode(str) {
   return out;
 }
 
+function stripSlash(url) {
+  return String(url || "").replace(/\/+$/, "");
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function linkRow(label, url) {
+  if (!url) return "";
+  const safe = escapeHtml(url);
+  return `${escapeHtml(label)}: <a href="${safe}">${safe}</a>`;
+}
+
+// Same rule as ChannelFlow-Server QuickPinController: local is primary when
+// the pairs differ (pairing on the LAN); public when they are identical.
+function derivePrimary(publicUrls, localUrls) {
+  const same =
+    stripSlash(publicUrls.m3u) === stripSlash(localUrls.m3u) &&
+    stripSlash(publicUrls.xmltv) === stripSlash(localUrls.xmltv);
+  return same ? publicUrls : localUrls;
+}
+
+function renderLinks(links) {
+  const primaryM3u = links.m3u || "";
+  const primaryXmltv = links.xmltv || "";
+  const pubM3u = links.m3uPublic || "";
+  const pubXmltv = links.xmltvPublic || "";
+  const locM3u = links.m3uLocal || "";
+  const locXmltv = links.xmltvLocal || "";
+  const hasVariants = pubM3u || pubXmltv || locM3u || locXmltv;
+  const same =
+    !hasVariants ||
+    (stripSlash(pubM3u) === stripSlash(locM3u) && stripSlash(pubXmltv) === stripSlash(locXmltv));
+
+  if (same) {
+    return `<strong>Links received</strong><br>${linkRow("M3U", primaryM3u)}<br>${linkRow("XMLTV", primaryXmltv)}`;
+  }
+
+  const group = (title, m3u, xmltv) =>
+    `<div class="link-group"><span class="link-group-title">${escapeHtml(title)}</span><br>${linkRow("M3U", m3u)}<br>${linkRow("XMLTV", xmltv)}</div>`;
+
+  return `<strong>Links received</strong>${group("Primary", primaryM3u, primaryXmltv)}${group("Public (internet)", pubM3u, pubXmltv)}${group("Local (same network)", locM3u, locXmltv)}`;
+}
+
 async function pinKey(pin) {
   const n = normalizePin(pin);
   if (n.length !== 8) throw new Error("PIN must be 8 letters or numbers");
@@ -32,10 +81,10 @@ async function pinKey(pin) {
   return crypto.subtle.importKey("raw", hash, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
 }
 
-async function encryptLinks(pin, m3u, xmltv) {
+async function encryptLinks(pin, urls) {
   const key = await pinKey(pin);
   const nonce = crypto.getRandomValues(new Uint8Array(12));
-  const plain = new TextEncoder().encode(JSON.stringify({ m3u, xmltv }));
+  const plain = new TextEncoder().encode(JSON.stringify(urls));
   const sealed = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, key, plain));
   const out = new Uint8Array(12 + sealed.length);
   out.set(nonce, 0);
@@ -59,8 +108,10 @@ const appResult = document.getElementById("app-result");
 const btnConnect = document.getElementById("app-connect");
 const btnDrop = document.getElementById("app-drop");
 const srvPin = document.getElementById("srv-pin");
-const srvM3u = document.getElementById("srv-m3u");
-const srvXmltv = document.getElementById("srv-xmltv");
+const srvM3uPublic = document.getElementById("srv-m3u-public");
+const srvXmltvPublic = document.getElementById("srv-xmltv-public");
+const srvM3uLocal = document.getElementById("srv-m3u-local");
+const srvXmltvLocal = document.getElementById("srv-xmltv-local");
 const btnSend = document.getElementById("srv-send");
 const srvMeta = document.getElementById("srv-meta");
 const waitingEl = document.getElementById("waiting");
@@ -152,7 +203,7 @@ btnConnect.addEventListener("click", () => {
       try {
         const links = await decryptLinks(currentPin, msg.ciphertext);
         appResult.hidden = false;
-        appResult.innerHTML = `<strong>Links received</strong><br>M3U: <a href="${links.m3u}">${links.m3u}</a><br>XMLTV: <a href="${links.xmltv}">${links.xmltv}</a>`;
+        appResult.innerHTML = renderLinks(links);
         setMeta(appMeta, "Decrypted with the same PIN. The pin server never saw these URLs.", "ok");
         showPin(displayPin(currentPin));
       } catch {
@@ -184,20 +235,29 @@ btnDrop.addEventListener("click", () => {
 
 btnSend.addEventListener("click", async () => {
   const pin = normalizePin(srvPin.value);
-  const m3u = srvM3u.value.trim();
-  const xmltv = srvXmltv.value.trim();
+  const publicUrls = { m3u: srvM3uPublic.value.trim(), xmltv: srvXmltvPublic.value.trim() };
+  const localUrls = { m3u: srvM3uLocal.value.trim(), xmltv: srvXmltvLocal.value.trim() };
   if (pin.length !== 8) {
     setMeta(srvMeta, "Enter the 8-character PIN shown on the app.", "err");
     return;
   }
-  if (!m3u || !xmltv) {
-    setMeta(srvMeta, "M3U and XMLTV URLs are both required.", "err");
+  if (!publicUrls.m3u || !publicUrls.xmltv || !localUrls.m3u || !localUrls.xmltv) {
+    setMeta(srvMeta, "Public and local M3U and XMLTV URLs are all required.", "err");
     return;
   }
+  const primary = derivePrimary(publicUrls, localUrls);
+  const urls = {
+    m3u: primary.m3u,
+    xmltv: primary.xmltv,
+    m3uPublic: publicUrls.m3u,
+    xmltvPublic: publicUrls.xmltv,
+    m3uLocal: localUrls.m3u,
+    xmltvLocal: localUrls.xmltv,
+  };
   btnSend.disabled = true;
   setMeta(srvMeta, "Encrypting…");
   try {
-    const ciphertext = await encryptLinks(pin, m3u, xmltv);
+    const ciphertext = await encryptLinks(pin, urls);
     const res = await fetch(`/v1/pins/${encodeURIComponent(pin)}/deliver`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

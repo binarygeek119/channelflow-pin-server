@@ -85,6 +85,18 @@ body {
 .meta.err { color: var(--err); }
 .meta.warn { color: var(--warn); }
 
+.url-group {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem 0.15rem;
+  margin: 0 0 0.85rem;
+}
+.url-group legend {
+  font-size: 0.8rem;
+  color: var(--ink);
+  padding: 0 0.35rem;
+}
+
 label {
   display: flex;
   flex-direction: column;
@@ -131,6 +143,13 @@ button.ghost {
   word-break: break-all;
 }
 .result a { color: #8ab4ff; }
+.result .link-group { margin-top: 0.65rem; }
+.result .link-group-title {
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
 
 footer {
   max-width: 960px;

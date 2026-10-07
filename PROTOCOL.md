@@ -29,10 +29,42 @@ key = SHA256( ASCII("ChannelFlow QuickPin v1") || ASCII(normalized PIN) )
 - Plaintext UTF-8 JSON:
 
 ```json
-{"m3u":"https://channelflow.example/iptv/channels.m3u","xmltv":"https://channelflow.example/iptv/epg.xml"}
+{
+  "m3u": "http://192.168.1.10:8096/iptv/channels.m3u?api_key=…",
+  "xmltv": "http://192.168.1.10:8096/iptv/epg.xml?api_key=…",
+  "m3uPublic": "https://channelflow.example/iptv/channels.m3u?api_key=…",
+  "xmltvPublic": "https://channelflow.example/iptv/epg.xml?api_key=…",
+  "m3uLocal": "http://192.168.1.10:8096/iptv/channels.m3u?api_key=…",
+  "xmltvLocal": "http://192.168.1.10:8096/iptv/epg.xml?api_key=…"
+}
 ```
 
+Field meaning:
+
+- `m3u` / `xmltv` — **primary** pair the app should try first
+- `m3uPublic` / `xmltvPublic` — internet-reachable Live TV URLs
+- `m3uLocal` / `xmltvLocal` — same-LAN Live TV URLs
+
+ChannelFlow-Server always sends all six keys. It sets the primary pair to **local** when the admin is pairing from a host other than the configured public URL (same network); otherwise primary is the **public** pair. The variants are included either way so the app can fall back.
+
+Apps should:
+
+1. Connect with `m3u` / `xmltv` first
+2. Ignore unknown JSON keys
+3. Treat missing variant keys as empty (old servers send only `m3u` and `xmltv`)
+4. If the primary pair fails and both variants are present, try the other pair
+
 A wrong PIN fails the auth tag. C# can use `SHA256.HashData` and `AesGcm`.
+
+The HTTP envelope is unchanged: deliver is still `{"ciphertext":"<base64>"}`, and the app still receives `{"type":"payload","ciphertext":"<base64>"}`.
+
+### Compatibility
+
+| Side | Behavior |
+| --- | --- |
+| New server, old app | Extra keys are ignored; the app uses primary `m3u` / `xmltv` |
+| Old server, new app | Only two keys; the app must not require variants |
+| New server, new app | All six keys; primary plus public/local fallback |
 
 ### C# sketch (server Quick Pin tab)
 
@@ -43,9 +75,17 @@ static byte[] Key(string pin)
     return SHA256.HashData(Encoding.ASCII.GetBytes("ChannelFlow QuickPin v1" + pin));
 }
 
-static string Encrypt(string pin, string m3u, string xmltv)
+static string Encrypt(string pin, string m3u, string xmltv, string m3uPublic, string xmltvPublic, string m3uLocal, string xmltvLocal)
 {
-    var plain = JsonSerializer.SerializeToUtf8Bytes(new { m3u, xmltv });
+    var plain = JsonSerializer.SerializeToUtf8Bytes(new Dictionary<string, string>
+    {
+        ["m3u"] = m3u,
+        ["xmltv"] = xmltv,
+        ["m3uPublic"] = m3uPublic,
+        ["xmltvPublic"] = xmltvPublic,
+        ["m3uLocal"] = m3uLocal,
+        ["xmltvLocal"] = xmltvLocal,
+    });
     var nonce = RandomNumberGenerator.GetBytes(12);
     var ct = new byte[plain.Length];
     var tag = new byte[16];
@@ -100,7 +140,7 @@ HTTP fallback:
 ## ChannelFlow-Server: Quick Pin tab
 
 1. User types the PIN shown on the app
-2. Server encrypts its current M3U and XMLTV URLs with that PIN (no key fetch)
+2. Server encrypts its public and local M3U/XMLTV URLs with that PIN (no key fetch). Primary is local when pairing on the LAN, public otherwise.
 3. Deliver:
 
 ```

@@ -29,9 +29,15 @@ var (
 )
 
 // Links is the plaintext JSON the ChannelFlow server encrypts.
+// Primary m3u/xmltv are always present. Public and local variants are
+// omitempty so a two-field blob from an older server still decrypts.
 type Links struct {
-	M3U    string `json:"m3u"`
-	XMLTV  string `json:"xmltv"`
+	M3U         string `json:"m3u"`
+	XMLTV       string `json:"xmltv"`
+	M3UPublic   string `json:"m3uPublic,omitempty"`
+	XMLTVPublic string `json:"xmltvPublic,omitempty"`
+	M3ULocal    string `json:"m3uLocal,omitempty"`
+	XMLTVLocal  string `json:"xmltvLocal,omitempty"`
 }
 
 // NormalizePin uppercases A–Z / 0–9 and strips dashes, spaces, and other junk.
@@ -67,14 +73,14 @@ func deriveKey(pin string) []byte {
 	return sum[:]
 }
 
-// EncryptLinks encrypts m3u/xmltv URLs using the pin as seed.
+// EncryptLinks encrypts a Links payload using the pin as seed.
 // Wire format (base64): 12-byte nonce || ciphertext || 16-byte GCM tag.
-func EncryptLinks(pin, m3u, xmltv string) (string, error) {
+func EncryptLinks(pin string, links Links) (string, error) {
 	pin, err := NormalizePin(pin)
 	if err != nil {
 		return "", err
 	}
-	plain, err := json.Marshal(Links{M3U: m3u, XMLTV: xmltv})
+	plain, err := json.Marshal(links)
 	if err != nil {
 		return "", err
 	}

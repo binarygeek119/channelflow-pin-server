@@ -19,7 +19,7 @@
     <div class="brand">
       <img class="logo" src="/logo.png" alt="ChannelFlow Pin Server" width="471" height="284" />
     </div>
-    <p class="lede">Apps wait here for a quick PIN. Type that PIN on ChannelFlow-Server to send encrypted M3U and XMLTV links. This page stands in for both sides until the client ships.</p>
+    <p class="lede">Apps wait here for a quick PIN. Type that PIN on ChannelFlow-Server to send encrypted public and local M3U/XMLTV links. This page stands in for both sides until the client ships.</p>
   </header>
 
   <main class="grid">
@@ -39,16 +39,28 @@
 
     <section class="card" id="server-pane">
       <h1>Quick Pin</h1>
-      <p class="hint">Same job as the ChannelFlow-Server tab: encrypt the two URLs with the PIN and deliver them.</p>
+      <p class="hint">Same job as the ChannelFlow-Server tab: encrypt the public and local URL sets with the PIN and deliver them. Primary is the local pair when it differs from public (same-network pairing), otherwise the public pair.</p>
       <label>Quick PIN
         <input id="srv-pin" inputmode="text" autocomplete="off" spellcheck="false" maxlength="9" placeholder="XXXX-XXXX" />
       </label>
-      <label>M3U URL
-        <input id="srv-m3u" type="url" placeholder="https://your-server/iptv/channels.m3u" />
-      </label>
-      <label>XMLTV URL
-        <input id="srv-xmltv" type="url" placeholder="https://your-server/iptv/epg.xml" />
-      </label>
+      <fieldset class="url-group">
+        <legend>Public (internet)</legend>
+        <label>M3U URL
+          <input id="srv-m3u-public" type="url" placeholder="https://your-public-host/iptv/channels.m3u" />
+        </label>
+        <label>XMLTV URL
+          <input id="srv-xmltv-public" type="url" placeholder="https://your-public-host/iptv/epg.xml" />
+        </label>
+      </fieldset>
+      <fieldset class="url-group">
+        <legend>Local (same network)</legend>
+        <label>M3U URL
+          <input id="srv-m3u-local" type="url" placeholder="http://192.168.1.10:8096/iptv/channels.m3u" />
+        </label>
+        <label>XMLTV URL
+          <input id="srv-xmltv-local" type="url" placeholder="http://192.168.1.10:8096/iptv/epg.xml" />
+        </label>
+      </fieldset>
       <div class="actions">
         <button type="button" id="srv-send">Encrypt and send</button>
       </div>
